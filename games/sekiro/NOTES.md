@@ -1034,3 +1034,26 @@ packets handed to the clone (1303 of them synthetic smoothing packets); per-tick
 clone 1-4 m, occasionally 11 m; distance 3-8 m while together.
 Open: the jerks. The NetworkManipulator moves the clone by a stick vector; the clone does not keep
 up and something snaps it to the packet position (not found yet).
+
+## Jerks: what the code says (offline, 2026-10-29), derived, not yet run
+
+- Friend's log of the second test: clone created after his area load (20:58:43), 3220 type-1 and
+  402 type-24 packets handed over; same 1-10 m per-tick jumps as on the owner's side.
+- Type 24 is not position: it is the second sync object (Pad +0x358 / Network +0x348, list
+  +0x2608), sent by 0x8d93c0 and received by 0x8d71c0, feeding behaviour/action events (0xb4eec0).
+  Positions come only from type 1.
+- NetworkManipulator update 0x7ec250, per frame after the packets:
+  desired = target(+0x360) - pos; if |velocity(+0x380)| * dt > |desired| move by desired, else by
+  velocity * dt; that vector goes to vt slot 41 (0x7ecf70), which only sets a **stick** direction
+  and speed level (x30, < 0.01 stop, < 2 walk 0.5, < 6 run 1.0, else dash). So the clone walks by
+  its own locomotion animations toward the target; speed is the animation's, not the sender's.
+- velocity = delta / (T * 1.2): deliberately 20% slower than the sender, so the clone lags.
+- Snap flag +0x350 (> 20 m/s, T <= 0 or T > 2 s) only feeds the whole delta to slot 41 once (a
+  dash stick), not a warp. The 1-10 m single-tick jumps therefore come from somewhere not found
+  yet (candidates: the moving-platform branch via physics +0x940 and 0x945d20, chr+0x1ba0 /
+  +0x1bc4 written from +0x3d8, or behaviour root motion).
+- Physics: 0x7dcf20 = position (physics +0x80), 0x7dcce0 = rotation (physics +0x70).
+
+Next run tools: `SEKIRO_COOP_DP_TRACE=1` (8 s of per-tick clone pos/target/velocity/stick/snap/T,
+15 s after the clone appears) and `SEKIRO_COOP_DP_LEAD=1.2` (target moved 1.2x ahead of the
+clone's position to cancel the damping); `run-wolf-dp.cmd lead` vs plain.
