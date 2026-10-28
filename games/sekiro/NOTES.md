@@ -1006,3 +1006,22 @@ Derived from the code (0x7ec9e0, NetworkManipulator per-packet handler):
 - Slot 41 (0x7ecf70) turns a per-frame move vector into a speed level: x30 m/s, < 0.01 stop,
   < 2 walk (stick 0.5), < 6 run (1.0), else dash.
 - So two type-1 packets in one update (T = 0) snap. Run 64 hands out at most one per update.
+
+## First two-account Steam test (2026-10-28, 23:45 MSK)
+
+Observed (both logs):
+- The Steam P2P transport over the game's own `steam_api64` (SteamNetworking005) works between
+  two real accounts: session established in ~4 s on both sides (client needed one handshake
+  retry). Both sides sent and received DP packets (types 1 and 24).
+- Owner's side: the friend's clone was created, stood ~320 m away (friend elsewhere), then jumped
+  316 m to the owner when the friend rested at the same idol, then moved around the standing
+  owner at 1-7 m: driven by the friend's positions. Owner saw the Wolf next to him.
+- Friend's side: clone created, but the friend then rested at an idol; the area reloaded with a
+  new Hero, the clone was gone, its Receive stopped being called and 573 packets piled up. The
+  friend saw nothing.
+- Remote flag/effect events were logged but not applied (`SEKIRO_COOP_APPLY_REMOTE` off).
+
+Fix: on a Hero change keep the clone if WorldChrMan still lists it, else recreate it 10 s later.
+Setup lessons: the friend needs me3 (portable zip unpacked as `me3\` next to the launcher);
+PowerShell drops `""` arguments; the kit's log copy only happens if the launcher window stays
+open, otherwise the log is in `%LOCALAPPDATA%\sekiro-coop`.
