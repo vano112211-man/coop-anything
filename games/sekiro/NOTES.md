@@ -938,3 +938,38 @@ Derived (from the Steamworks ISteamNetworking layout, not yet run in game):
 - `run-steam.cmd host|client <friend id>`; without an id it logs your own SteamID64.
 
 Unknown: whether `me3 --online false` affects Steam P2P; whether two real accounts connect.
+
+## Run 58 result (vtcount with per-hook enable), 2026-10-28
+
+Observed in the owner's log: `hooked=234 skipped=17 failed=0 apply=0`, then every second
+`hero_only=[] clone_only=[] both=[]`. The hooks were created but none was applied, so the counter
+method gave no data again. Dropped in favour of the session pipe below. Also confirmed:
+Hero+0x21f8 is CsPlayerMenuCtrl (vt 0x2b19648), unrelated to sync.
+
+## The engine's remote-player pipe (offline RE, 2026-10-28), derived, not yet run
+
+From the 1.06 image (RTTI + disassembly):
+- PlayerIns ctor 0xa217a0: `chr+0x2020` = PlayerSessionHolder (ctor 0x1061d90, vt 0x2b862f8,
+  +0x18 = `PlayerSession*`, +0x20 = -1). Default session = shared PlayerNullSession singleton
+  (vt 0x2b86308, object 0x3d938d0, made by 0x1061f20). PlayerNetworkSession: vt 0x2b86150,
+  0x40 bytes, identity at +8. PlayerDebugSession vt 0x2b86048.
+- PlayerSession vt (12 slots): [1] Send(this, buf, size, type) (Network: storage [0x3d67c90]
+  0x8e7210); [6] Receive(this, out{buf, cap, size}, desc{buf, cap}, type) -> out (Network:
+  0x8e6b50(storage, this+8, type, buf, cap)); [11] identity copy. Null: Send `ret`, Receive zeros.
+- Manipulator factory 0x7f8480(data, &chr+0x2020): 0 Chr 0x7e3220 (0x340), 1 Pad 0x7ed3a0
+  (0x450), 2 Network 0x7ebab0 (0x420), 3 Replay 0x7f4350 (0x5430), 5 0x7e9f10 (0x450). Pad and
+  Network both get the holder; sync objects store it at +0x1e0 (base 0x8d3c60).
+- Sender: PadManipulator vt[11] = 0x7eeb50: counter +0x360 (reset from 0x96f8a0(5)), fills the
+  sync object (+0x350) from the character, then 0x8da080: `0x8d7000(sync, {buf, 1}, 0x400)`
+  serialises list CSPacketInheritList16 +0x2808, then +0x27e4/+0x27f4 (0x8e8370) and +0x2960
+  (0x8d5d00); then `[holder+0x18]->Send(buf, n, 1)`.
+- Receiver: NetworkManipulator update loops 0x8d8050: `session->Receive(&out, {stackbuf, 0x400}, 1)`;
+  if out has buf, cap and size: reset (0x8dd210), list +0x2808 vt[1] deserialise, 0x8e8510 x2,
+  apply 0x8dea40, then identity check (slot 11) and maybe 0x8dd290.
+- Unknown: whether 0x7eeb50 runs at all offline.
+
+Test built (`run-wolf-dp.cmd`, `SEKIRO_COOP_DP_SESSION=1`): the Hero's holder gets a fake session
+(copy of the Null vtable, slots 0/1/6 replaced) whose Send copies type-1 packets out; they go over
+the session as `PacketBody::DpRegular`, the peer simulator mirrors them back with its delay, and
+a kind-2 clone's fake session hands them to Receive. Log line `dp session: counters` shows sends,
+receive calls and packets given.

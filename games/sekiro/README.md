@@ -6,14 +6,17 @@
 | Versions tested | Steam 1.06 (`sekiro.exe` ProductVersion 1.6.0.0, PE timestamp `0x5fa3e066`, SHA-256 `637aca527538c0ec6e1f136c8ed66046e95dfbdbb1f51926e134d9916398b856`) |
 | Projects | [Sekiro Online](https://www.nexusmods.com/sekiro/mods/577) (Souls-style summons, abandoned 2021); [sekiro-coop](https://github.com/mstampfli/sekiro-coop) (seamless 2-player prototype, Rust) |
 | QA level | none (one real game client plus the project's peer simulator; no two-client test yet) |
-| Last updated | 2026-10-27 |
+| Last updated | 2026-10-28 |
 
 ## Where things stand
 
 Nobody can play the Sekiro story seamlessly with a friend yet. Sekiro Online gives Souls-style
 co-op through summon signs and Steam, but it has been unmaintained since 2021 and we did not test
-it. sekiro-coop is the only seamless attempt: its networking and world-event sync work, but the
-second player is not shown in the world, and the per-launch probes below show why that is hard.
+it. sekiro-coop is the only seamless attempt. On a local branch (not yet public) the second player
+now shows up as a stand-in enemy (the Owl) that follows the remote player and plays matching
+attacks, blocks and dodges, tested on one PC against the peer simulator. A Wolf-looking second
+player exists but does not walk yet. A Steam P2P transport and a native remote-player packet pipe
+are written but not yet run.
 
 ## Existing work
 
@@ -75,27 +78,53 @@ Nothing is released. All changes are local experiments on top of sekiro-coop `1e
 - Fixed in sekiro-coop: freed characters stayed in the registry and crashed the host's enemy
   broadcast after a death/reload; the simulator now answers handshake retries.
 
+- Actions (2026-10-27/28): the player's action ring (TimeAct `[sm+0x10]+0x34+k*0x28`) is sent as
+  `action_id/action_seq`; the puppet plays them through the native ForcePlayAnimation
+  (`0xbd84c0(module=[[chr+0x1ff8]+0x58], id)`). The Owl (c5060, NpcParam 50600000) has nearly the
+  player's move set; map used: combo hits to 3000/3001/3005/3006, block and parry to 3093, dodge
+  to 3064. The owner saw matching attacks, block and parry, and a dodge that looked right; FPS
+  normal.
+- Wolf-looking second player: a real `PlayerIns` created with the game's net-player path
+  `0xa49460(WorldChrMan, id, data)` plus `0x9f5170(chr, 0)` and `vt+0x90`, is visible with the
+  player's own appearance and equipment. Driving it through a swapped PadManipulator replays
+  actions, but it never plays locomotion (it floats or stands). Ruled out on the owner's PC: input
+  fields, manipulator sub-objects, IsLocalPlayer, omission level, prosthetic/save state.
+- Offline (not yet run): the engine's own remote-player pipe. Every PlayerIns has a
+  PlayerSessionHolder (`+0x2020`, session pointer at `+0x18`, normally the PlayerNullSession
+  singleton). The local PadManipulator serialises a DP_REGULAR packet and calls
+  `session->Send(buf, size, 1)`; a kind-2 NetworkManipulator calls `session->Receive(...)` and
+  applies it. The branch swaps in fake sessions to capture the player's packets and feed them to
+  the clone. Details and RVAs in [NOTES.md](NOTES.md).
+- Steam (not yet run): Sekiro 1.06 ships an old `steam_api64.dll` with no flat API, so the
+  transport calls `ISteamNetworking` (SteamNetworking005) through its C++ vtable, using the game's
+  own AppID; see the new section in
+  [playbook/networking-steam-spacewar.md](../../playbook/networking-steam-spacewar.md).
+
 ## QA
 
 - sekiro-coop's own data plane, reproduced on one PC against its `peer-simulator` over loopback:
   session established, remote snapshots and flag/effect events received, host enemy-state echo
   resolved for every enemy (`matched=2 unmatched_count=0`). No desync kill, no crash.
+- The Owl puppet was checked by eye by the owner with the simulator mirroring his own moves
+  (runs 40-56 in NOTES.md).
 - No two-client test and no bot test yet, so the QA level stays `none`.
 
 ## How to play
 
-Not playable yet.
+Not playable yet. The local branch has a launcher for two players over Steam (`play-steam.cmd
+host|client <friend SteamID64>`), untested between two accounts.
 
 ## Known issues
 
-- The second player is invisible (sekiro-coop).
-- Connection is direct IP only; no NAT traversal.
+- The second player is an enemy model (the Owl) standing in for the player; the Wolf-looking
+  clone does not walk yet.
+- Enemies, story and world state are not shared beyond sekiro-coop's flag/effect events.
+- Steam connection untested; the upstream project is direct IP only.
 
 ## Next steps
 
-1. Send the action/animation in PlayerSnapshot so attacks, deflects and jumps show (yaw is done:
-   the puppet turns with the remote player, including in place, and stops its run cycle on stop).
-2. Find the animation playback native (same image analysis) so the puppet plays the remote
-   player's animations; then make it look like the player (DS3-lineage remote player slots).
-3. Replace raw UDP with the Steam Spacewar relay (playbook/networking-steam-spacewar.md).
-4. Two-client bot tests (playbook/automated-qa.md).
+1. Run the fake-session test (`run-wolf-dp.cmd`): does the game call the player's session Send
+   offline, and does a kind-2 clone walk on the replayed packets?
+2. First two-account Steam test with the Owl puppet; then a bot-driven two-client test
+   (playbook/automated-qa.md).
+3. Publish the branch as a fork (AGPL: whoever shares the DLL must offer the source).
