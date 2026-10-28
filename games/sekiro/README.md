@@ -14,9 +14,9 @@ Nobody can play the Sekiro story seamlessly with a friend yet. Sekiro Online giv
 co-op through summon signs and Steam, but it has been unmaintained since 2021 and we did not test
 it. sekiro-coop is the only seamless attempt. On a public branch ([vano112211-man/sekiro-coop `coop/puppet-probe`](https://github.com/vano112211-man/sekiro-coop/tree/coop/puppet-probe)) the second player
 now shows up as a stand-in enemy (the Owl) that follows the remote player and plays matching
-attacks, blocks and dodges, tested on one PC against the peer simulator. A Wolf-looking second
-player exists but does not walk yet. A Steam P2P transport and a native remote-player packet pipe
-are written but not yet run.
+attacks, blocks and dodges, tested on one PC against the peer simulator. On 2026-10-29 two players on
+two Steam accounts saw each other as Wolves moving with each other's animations, driven by the
+game's own remote-player code over Steam P2P, still with visible jerks.
 
 ## Existing work
 
@@ -116,14 +116,13 @@ host|client <friend SteamID64>`), untested between two accounts.
 
 ## Known issues
 
-- The second player is an enemy model (the Owl) standing in for the player; the Wolf-looking
-  clone does not walk yet.
+- The other player's Wolf moves in jerks and wears your own equipment, not theirs.
 - Enemies, story and world state are not shared beyond sekiro-coop's flag/effect events.
-- Steam connection untested; the upstream project is direct IP only.
+- Each player keeps their own world: enemies and story are not shared.
 
 ## Next steps
 
-1. Run the fake-session test (`run-wolf-dp.cmd`): does the game call the player's session Send
-   offline, and does a kind-2 clone walk on the replayed packets?
-2. First two-account Steam test with the Owl puppet; then a bot-driven two-client test
-   (playbook/automated-qa.md).
+1. Smooth the remote Wolf: find what snaps it to the packet position (NetworkManipulator,
+   0x7ec250/0x7ec9e0) and why it does not keep up by itself.
+2. Give the Wolf the other player's equipment (their PlayerGameData, not the local one).
+3. A bot-driven two-client test (playbook/automated-qa.md).

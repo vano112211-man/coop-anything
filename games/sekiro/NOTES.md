@@ -1025,3 +1025,12 @@ Fix: on a Hero change keep the clone if WorldChrMan still lists it, else recreat
 Setup lessons: the friend needs me3 (portable zip unpacked as `me3\` next to the launcher);
 PowerShell drops `""` arguments; the kit's log copy only happens if the launcher window stays
 open, otherwise the log is in `%LOCALAPPDATA%\sekiro-coop`.
+
+## Second two-account test (2026-10-29 00:00 MSK): both players see each other
+
+Observed: session established, clone created on both sides, both players saw the other's Wolf
+moving with the other's animations, **with jerks**. Owner's log: 2617 type-1 and 258 type-24
+packets handed to the clone (1303 of them synthetic smoothing packets); per-tick jumps of the
+clone 1-4 m, occasionally 11 m; distance 3-8 m while together.
+Open: the jerks. The NetworkManipulator moves the clone by a stick vector; the clone does not keep
+up and something snaps it to the packet position (not found yet).
