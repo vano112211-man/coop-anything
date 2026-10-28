@@ -874,3 +874,10 @@ MSVC-RTTI walker (type descriptor → complete object locator → vftable).
 - Assessment: a fully animated Wolf second player needs the game's net-player machinery
   (NetworkManipulator + SprjChrBehaviorSyncModule fed by a session), which Sekiro Online
   re-implemented over a long time. Open-ended.
+
+### Run 57 plan: per-method call counter
+- New `vtcount.rs`: 256 assembly stubs (global_asm) that count a call when rcx is the Hero or
+  the clone, then jump to the original (registers/stack untouched). Every distinct PlayerIns
+  virtual method (vftable 0x2a2b338, 253 slots, skipping ones with a ret in the first 5 bytes) is
+  hooked via MH_CreateHook + MH_QueueEnableHook + MH_ApplyQueued (one thread suspension).
+  Each second the mod logs methods called for the Hero but not the clone, and vice versa.
