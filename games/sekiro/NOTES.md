@@ -986,3 +986,23 @@ Observed:
   animations at all. Cause (derived): the fake session dropped type 7 and answered every
   Receive, whatever type was asked, with type-1 data.
 - Fix for run 61: keep all types, send them as `DpRegular { ty }`, answer Receive per type.
+
+## Runs 61-63: Wolf clone animates from the game's own packets (2026-10-28)
+
+Observed:
+- Types the Hero's session sends: 1 (76 bytes, ~15/s; bytes 16..28 look like the position as
+  f32) and 24 (43-52 bytes, ~1/s). The clone asks Receive for types 1 and 24. Run 61 dropped
+  type 24 (a `ty > 15` filter): no animations. Run 62 passes both: **the clone plays the
+  player's animations** (owner), but lags and jumps (per-tick steps up to 8 m, 2-13 m from the
+  Hero with a 250 ms mirror delay).
+- Run 63: our old puppet code was still pinning the clone (animation reset every 2 s, one
+  warp). Disabled for DP mode: "a bit better", still jumps 5-10 m.
+
+Derived from the code (0x7ec9e0, NetworkManipulator per-packet handler):
+- target = packet position (+0x360); delta = target - current; T = [manip+0x3cc] seconds since
+  the last packet (zeroed after each packet in 0x7ec250's loop).
+- If |delta|/T > 20 m/s, T <= 0 or T > 2 s: velocity = delta and +0x350 = 1 (snap). Else
+  velocity +0x380 = delta / (T * 1.2).
+- Slot 41 (0x7ecf70) turns a per-frame move vector into a speed level: x30 m/s, < 0.01 stop,
+  < 2 walk (stick 0.5), < 6 run (1.0), else dash.
+- So two type-1 packets in one update (T = 0) snap. Run 64 hands out at most one per update.
