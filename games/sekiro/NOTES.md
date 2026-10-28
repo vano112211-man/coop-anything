@@ -881,3 +881,10 @@ MSVC-RTTI walker (type descriptor → complete object locator → vftable).
   virtual method (vftable 0x2a2b338, 253 slots, skipping ones with a ret in the first 5 bytes) is
   hooked via MH_CreateHook + MH_QueueEnableHook + MH_ApplyQueued (one thread suspension).
   Each second the mod logs methods called for the Hero but not the clone, and vice versa.
+
+### Run 57 (2026-10-28 21:07): counter installed, counts all zero
+- 234 PlayerIns methods hooked (17 skipped, 0 failed, MH_ApplyQueued = 0), no crash, but every
+  per-second count was 0 for both Hero and clone. Either the queued enable did not take effect
+  or the stubs never ran.
+- Run 58: enable each hook with MH_EnableHook (log failures), log the first byte of 5 hooked
+  functions (expect E9), and count every stub hit regardless of rcx.
