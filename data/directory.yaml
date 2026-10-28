@@ -3302,11 +3302,12 @@
   qa: none
   notes: Rust seamless two-player co-op for Sekiro Steam 1.06 injected via me3, MinHook, raw UDP direct IP
     (Steam P2P stub). Session, player snapshots, flag/effect events and host enemy HP reproduced against its
-    peer simulator on one PC (2026-10-27); the remote player is not rendered upstream. A local, unpublished branch
-    shows it as an Owl stand-in with matching attacks (one PC, simulator) and adds an untested Steam P2P transport;
+    peer simulator on one PC (2026-10-27); the remote player is not rendered upstream. A fork branch
+    (vano112211-man/sekiro-coop, coop/puppet-probe) shows it as an Owl stand-in with matching attacks (one PC, simulator) and adds an untested Steam P2P transport;
     see games/sekiro. AGPL-3.0-or-later.
   sources:
   - https://github.com/mstampfli/sekiro-coop
+  - https://github.com/vano112211-man/sekiro-coop/tree/coop/puppet-probe
   - https://github.com/cranebeaker/coop-anything/blob/main/games/sekiro/NOTES.md
   checked: 2026-10-28
 - game: Lies of P

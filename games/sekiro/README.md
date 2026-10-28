@@ -12,7 +12,7 @@
 
 Nobody can play the Sekiro story seamlessly with a friend yet. Sekiro Online gives Souls-style
 co-op through summon signs and Steam, but it has been unmaintained since 2021 and we did not test
-it. sekiro-coop is the only seamless attempt. On a local branch (not yet public) the second player
+it. sekiro-coop is the only seamless attempt. On a public branch ([vano112211-man/sekiro-coop `coop/puppet-probe`](https://github.com/vano112211-man/sekiro-coop/tree/coop/puppet-probe)) the second player
 now shows up as a stand-in enemy (the Owl) that follows the remote player and plays matching
 attacks, blocks and dodges, tested on one PC against the peer simulator. A Wolf-looking second
 player exists but does not walk yet. A Steam P2P transport and a native remote-player packet pipe
@@ -111,7 +111,7 @@ Nothing is released. All changes are local experiments on top of sekiro-coop `1e
 
 ## How to play
 
-Not playable yet. The local branch has a launcher for two players over Steam (`play-steam.cmd
+Not playable yet. The branch has a launcher for two players over Steam (`play-steam.cmd
 host|client <friend SteamID64>`), untested between two accounts.
 
 ## Known issues
@@ -127,4 +127,3 @@ host|client <friend SteamID64>`), untested between two accounts.
    offline, and does a kind-2 clone walk on the replayed packets?
 2. First two-account Steam test with the Owl puppet; then a bot-driven two-client test
    (playbook/automated-qa.md).
-3. Publish the branch as a fork (AGPL: whoever shares the DLL must offer the source).
