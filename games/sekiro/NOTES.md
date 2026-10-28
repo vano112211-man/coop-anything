@@ -904,3 +904,16 @@ MSVC-RTTI walker (type descriptor → complete object locator → vftable).
   into a kind-2 (NetworkManipulator) clone would use the game's own remote-player pipeline,
   locomotion included. Next: find the packet serialize/deserialize entry points in 0x8d3c60's
   family (0x8df740 registers fields; 0x8dd030 ← 0x8e77e0 parses many fields).
+
+## Offline RE: native remote-player sync (1.06), 2026-10-28
+
+Derived from disassembly, not yet confirmed in game:
+- PadManipulator+0x350 and NetworkManipulator+0x340 are sync objects built on base init 0x8d3c60.
+  Packet lists inside: +0x0 tag_DP_REGULAR_NORMAL, +0x98 tag_DP_REGULAR, +0x138 tag_DP_REGULAR_REPLAY_GHOST.
+- List vtable: [0] Serialize 0x8d6560(list, &{u8* buf, u32 cap}) -> size (presence bitmask, then fields);
+  [1] Deserialize 0x8dcc50(list, &ptr) -> consumed; [3] field count.
+- NetworkManipulator update 0x7ec250 loops `while 0x8d8050(obj)`. 0x8d8050 reads through
+  [[obj+0x1e0]+0x18]->vt[0x30]; for the Hero that object (+0x21f8) is CsPlayerMenuCtrl (vt 0x2b19648),
+  so the receive source is still unknown.
+- Hypothesis: a remote PlayerIns walks only when fed DP_REGULAR packets. Probe (run 58b,
+  `SEKIRO_COOP_DP_PROBE=1`) serializes the Hero's three lists once a second and logs size and bytes.
