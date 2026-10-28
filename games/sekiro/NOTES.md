@@ -861,3 +861,16 @@ MSVC-RTTI walker (type descriptor → complete object locator → vftable).
   ChrIns+0x110 = level. Characters with omission are updated only every few frames.
 - Run 56: each step set the clone's +0x110 to the Hero's value and bit 0 of +0x1a10; log both
   characters' values once.
+
+### Run 56 (2026-10-28 ~05:07, reported 20:53): omission is not it
+- Log: omission level Hero 0, clone 0; +0x1ff0 = -2 for both; flags +0x1a10 Hero 0x58, clone 0x00
+  (read at the first step). The clone still stood still; its manipulator update wrapper ran 0
+  times in this short run (run 55: 124; net runs 41-43: 800-1400, when we warped/nudged it).
+- Derived: the clone's character update runs only sometimes, apparently when we move it (warp);
+  locomotion failed even in runs where it updated ~30/s, so update rate alone is not the cause.
+- WorldChrMan update helpers that walk the player slots (+0x40/+0x48, stride 0x38): 0xa50120,
+  0xa4f940, 0xa4e8e0 (the largest; calls vt +0x138, +0x18, +0x1a8, +0x1b0, +0x408, +0x4d8, +0x4f8,
+  +0x68, +0x3f0, +0x3f8, +0x7c0). Not analysed.
+- Assessment: a fully animated Wolf second player needs the game's net-player machinery
+  (NetworkManipulator + SprjChrBehaviorSyncModule fed by a session), which Sekiro Online
+  re-implemented over a long time. Open-ended.
