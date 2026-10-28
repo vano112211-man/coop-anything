@@ -973,3 +973,16 @@ Test built (`run-wolf-dp.cmd`, `SEKIRO_COOP_DP_SESSION=1`): the Hero's holder ge
 the session as `PacketBody::DpRegular`, the peer simulator mirrors them back with its delay, and
 a kind-2 clone's fake session hands them to Receive. Log line `dp session: counters` shows sends,
 receive calls and packets given.
+
+## Runs 59-60: the session pipe works (2026-10-28)
+
+Observed:
+- Run 59: both the Hero's and the kind-2 clone's holder session is **PlayerDebugSession**
+  (vt 0x2b86048), not Null; the swap refused. Owner: the clone **played walk and run animations
+  for the first time**, but moved in jerks. The Debug session is a local loopback (manager
+  0x3d93618, 32-entry ring), so the game itself fed the Hero's packets to the clone.
+- Run 60 (swap accepted, packets via the simulator with delay): the game calls the Hero's Send
+  about 15/s with type 1 and 2.5/s with type 7; the clone's Receive got 250 packets. Owner: no
+  animations at all. Cause (derived): the fake session dropped type 7 and answered every
+  Receive, whatever type was asked, with type-1 data.
+- Fix for run 61: keep all types, send them as `DpRegular { ty }`, answer Receive per type.
