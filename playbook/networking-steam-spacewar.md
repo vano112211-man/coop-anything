@@ -215,6 +215,19 @@ GameRichPresenceJoinRequested_t { uint64 friend; char connect[256]; }
 - **Lobby id:** show the id on screen and copy it to the clipboard as a manual
   fallback (`-steamjoin <id>`).
 
+## When the game already uses Steam: its own AppID, maybe an old SDK
+
+If the game is a Steam release that both players own, skip Spacewar: the game has already
+initialised Steam with its own AppID, so the mod takes the interfaces it has and never calls
+`SteamAPI_Init`. Check which API the shipped `steam_api64.dll` exposes first. Sekiro 1.06
+(2019) ships an old one (FileVersion 01.68.08.89) with no flat API and no
+ISteamNetworkingMessages, only the classic accessors (`SteamNetworking()` returns
+`SteamNetworking005`). Then call the C++ vtable directly: ISteamNetworking [0]
+SendP2PPacket(CSteamID as u64, data, len, EP2PSend, channel), [1] IsP2PPacketAvailable,
+[2] ReadP2PPacket, [3] AcceptP2PSessionWithUser, [7] AllowP2PPacketRelay; unreliable sends
+stop at 1200 bytes. Status for Sekiro: written, not yet tested between two accounts
+([games/sekiro/NOTES.md](../games/sekiro/NOTES.md)).
+
 ## Testing without two Steam accounts: the mock DLL
 
 One PC can only run one Steam account, so you can't test two players locally with

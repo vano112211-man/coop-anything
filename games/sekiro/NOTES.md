@@ -917,3 +917,24 @@ Derived from disassembly, not yet confirmed in game:
   so the receive source is still unknown.
 - Hypothesis: a remote PlayerIns walks only when fed DP_REGULAR packets. Probe (run 58b,
   `SEKIRO_COOP_DP_PROBE=1`) serializes the Hero's three lists once a second and logs size and bytes.
+
+## Steam P2P transport (2026-10-28), written, not yet run
+
+Observed (game identity: Steam 1.06 test copy):
+- `steam_api64.dll` next to sekiro.exe: 119720 bytes, SHA-256
+  fc20547408a7c34f0bd4946a34c21aab48a75e3b98dce9e55969f486d37b212f, FileVersion 01.68.08.89.
+- No flat API (`SteamAPI_ISteam*` / `SteamAPI_InitFlat`) and no ISteamNetworkingMessages. It
+  exports the classic accessors `SteamNetworking`, `SteamUser`, `SteamMatchmaking`, `SteamFriends`,
+  plus `SteamAPI_RegisterCallback`. Interface strings: SteamNetworking005, SteamUser016,
+  SteamMatchMaking009, SteamFriends013, SteamClient012.
+
+Derived (from the Steamworks ISteamNetworking layout, not yet run in game):
+- Use the game's own Steam (AppID 814380, both players own it): no Spacewar, no `SteamAPI_Init`.
+- ISteamNetworking005 vt: [0] SendP2PPacket, [1] IsP2PPacketAvailable, [2] ReadP2PPacket,
+  [3] AcceptP2PSessionWithUser, [7] AllowP2PPacketRelay. CSteamID passed as u64; ISteamUser
+  [2] GetSteamID returns through a hidden pointer.
+- No callbacks: each side gets the other's SteamID64 (`SEKIRO_COOP_STEAM_PEER`); both send the
+  handshake, which accepts the session both ways. Channel 7; packets over 1200 bytes go reliable.
+- `run-steam.cmd host|client <friend id>`; without an id it logs your own SteamID64.
+
+Unknown: whether `me3 --online false` affects Steam P2P; whether two real accounts connect.
