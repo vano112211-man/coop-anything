@@ -888,3 +888,19 @@ MSVC-RTTI walker (type descriptor → complete object locator → vftable).
   or the stubs never ran.
 - Run 58: enable each hook with MH_EnableHook (log failures), log the first byte of 5 hooked
   functions (expect E9), and count every stub hit regardless of rcx.
+
+## Offline (2026-10-28 evening): the game's own remote-player sync
+- NetworkManipulator (ctor 0x7ebab0, 0x420 bytes) owns at +0x340 a 0x29c0-byte object (ctor
+  0x8d46c0). Its update vt+0x48 (0x7ec250) loops `while 0x8d8050(obj)` (has data), reads two
+  vectors (0x8d63f0, 0x8d6210: position/direction?), calls 0x7ec9e0(this, ChrCtrl), then HP-like
+  values (0x8d6290, 0x8d62d0) into the character's modules: it plays back received state.
+- PadManipulator +0x350 holds the sibling 0x4f30-byte object (ctor 0x8d4780). Both share the base
+  init 0x8d3c60 (or 0x8d3f60 for 0x8d4720/0x8d47c0 variants), which registers packet adapters:
+  `CSPacketCallAdapter<tag_DP_REGULAR_NORMAL>` (vftable 0x29f8ff0) at +0x28a0,
+  `<tag_DP_REGULAR>` (0x29f9008) at +0x28b8, `<tag_DP_REGULAR_REPLAY_GHOST>` (0x29f9020) at +0x28d0,
+  each pointing back at the object. Only these three DP packet tags exist in 1.06.
+- Derived (guess): PadManipulator's object builds the local player's DP_REGULAR sync packets,
+  NetworkManipulator's object consumes them for a remote PlayerIns. Feeding the Hero's packets
+  into a kind-2 (NetworkManipulator) clone would use the game's own remote-player pipeline,
+  locomotion included. Next: find the packet serialize/deserialize entry points in 0x8d3c60's
+  family (0x8df740 registers fields; 0x8dd030 ← 0x8e77e0 parses many fields).
