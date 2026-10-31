@@ -1140,3 +1140,15 @@ smoothness result.)
 - So a native enemy-sync manager exists and runs every frame, gated on the session state. Next:
   what the 0x158-byte per-character records are and who consumes them; what the senders pack;
   whether the gate can be opened for these functions only, or the records fed directly.
+- Record users: ComManipulator (vt 0x29d2fb8, the enemies' AI manipulator) slot 11 = 0x7e54f0
+  writes the 0x1c record via 0xa4b7e0 -> 0xa1bd90 (id at ComManipulator+0x360). NetAIManipulator
+  reads via 0xa4b7b0 / 0xa4b710 (-> 0xa1ae90, needs flag bit 4) / 0xa4b770 / 0xa4b740 (-> 0xa1aef0).
+  Packet 0x46 sender 0xa1b320 walks a list at mgr+0x5c80 and serialises 0x158 records with
+  0x8e01c0; the reader deserialises with 0x8e0530. So: host enemies = ComManipulator writing
+  records, client enemies = NetAIManipulator reading them, packet 0x46 (and 4) in between.
+
+Observed (bot run 82, `SEKIRO_COOP_ENEMY_PROBE=1`): the manager exists offline (20 sets). Nearby
+enemies (10120000, 10130000, 72002080, ...) have ComManipulator with net ids 0x083c, 0x083d,
+0x0880.. (set 1 and set 1/... slots). Their 0x1c records are filled offline: f32 x, y, z, 0,
+yaw (e.g. 1.187), 0, then 0xffff. The 0x158 records are mostly zero offline. Records did not
+change over 3 s for idle enemies. Next: make one enemy a NetAI puppet driven by a record we write.
