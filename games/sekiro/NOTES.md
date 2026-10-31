@@ -1185,3 +1185,41 @@ allow, so no code was copied; only layout facts were used and checked at run tim
   vec3 at +0 (position) and vec3 at +0xc (read with the same helper 0x7e4c40, probably rotation).
 - The enemy's animation id stayed 0 in the log: animation / actions probably come from the 0x158
   record (flag bit 2) or another packet type. Next.
+
+## The 0x158 behaviour record and enemy sync over the network (2026-10-31, runs 86-89)
+
+Derived (offline RE, 1.06):
+- Owner side: ComManipulator vt[11] (0x7e54f0) writes the 0x1c record every frame and the 0x158
+  record only when the enemy's behaviour sync state changed: module `chr+0x1ff8 -> +0x28`, gate
+  0xb42190 = byte +0xb20 (set by 0xb45440 from 0xfed670 = "state changed") or +0xb21 (a latch).
+  Then 0xa1b550 sets flag bit 3 (0x8) and queues the id at mgr+0x5c78 for packet 0x46; the
+  sender 0xa1b320 empties that queue every frame, online or not.
+- 0x158 layout (from the writer and the serialiser 0x8e01c0, which copies every field raw, so
+  there are no pointers in it): +0x00 u32[16] (count byte +0x140), +0x40 u64[32] (count byte
+  +0x141), +0x142 u8 = 1, +0x143 u8 (module +0xb21), +0x144 u32, +0x148 target mode (1: u16 net
+  id of the target at +0x14c; 2: vec3 at +0x14c, written from the target's vt+0x70).
+- Client side: NetAIManipulator (0x7ea5c0) takes a record with flag bit 2 (getter 0xa1ae90) and
+  hands the u32 list and the u64 list to module `chr+0x1ff8 -> +0x30` (0xb4e9c0, 0xb4eb70; needs
+  `[module+0x10] != 0`, 0xb4eeb0), copies +0x148.. to NetAI +0x420/+0x430/+0x440, then clears
+  bit 2 (0xa1b2d0).
+- Flags word per slot, so far: bit 0 fresh 0x1c, bit 2 fresh 0x158 (client), bit 3 0x158 queued
+  to send (owner), 0x100 set by the 0x1c getter.
+
+Observed:
+- Run 86 (`ENEMY_MIRROR`: enemy B replays enemy A's records): B (10130000, 20 m) never consumed
+  anything: animation id -1 and `[module+0x10] == 0`, i.e. an inactive enemy. Not usable.
+- Runs 87-88 (`ENEMY_REPLAY`: record one enemy 15-20 s, then drive the same enemy from the
+  recording through NetAI): the nearest enemy (10120000) never fought, even with the bot
+  running at it and pressing attack 14 times; its 0x158 record changed once in 20 s (at load),
+  and it stood still in both phases. The u32 list was 0x2b5, the u64 list 0x7f, 0x38, 0x171,
+  0x172, 0x1ae (high halves 0). Animation candidates for enemies: module `chr+0x1ff8 -> +0x10`,
+  words +0x30 = 0x44c and +0x34 = 0x9c40 (40000) next to running float timers (+0x24, +0x28);
+  the word at +0x20 that gives the player's animation id is 0 for enemies.
+- **Run 89 (`ENEMY_SYNC=loop` through the peer simulator)**: 251 EnemyRec packets (0x1c every
+  50 ms, 0x158 once) went out and all 251 came back (offset 271 ms); after 20 s the same enemy
+  was put on a NetAI manipulator and driven by the returned records: d(enemy, record target)
+  0.00-0.03 m for 55 s, the 0x158 record applied and consumed. So the whole path host records ->
+  network -> client NetAI works; what it does with a *fighting* enemy is untested, because no
+  enemy near this save's start fights.
+- Unknown: whether 10120000 is a hostile enemy at all here, and whether NetAI reproduces
+  attacks from the 0x158 record. Needs an enemy that fights (owner: a save next to a patrol).
