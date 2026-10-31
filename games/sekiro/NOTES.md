@@ -1266,3 +1266,9 @@ so samples entered the buffer late and the delay climbed to its cap. Defaults no
   revive. Unknown: what an active enemy does at hp 0 written this way (death animation, drops,
   the deathblow prompt). Needs an enemy near the save.
 - The Steam launchers turn on both enemy records and health sync with `SHARED_ENEMIES=1`.
+- Net ids against handles (derived from one enemy, run 105 + probe run 90): enemy 72002081 has
+  handle 0x10004081 and net id 0x0881: the slot (low 11 bits, 0x81) is the same, the set differs
+  (8 in the handle, 1 in the net id). ComManipulator's ctor (0x7e4010) sets +0x360 = 0xffff; the
+  writer of the real id is not found yet. Map-placed enemies get the same handles in every game
+  of the same map, so the net ids are probably the same on both PCs; the client checks kind and
+  place before taking an enemy over anyway.
