@@ -1132,3 +1132,11 @@ smoothness result.)
   0xa1c4f9 (4), 0xa1cc07 (5); readers 0xa1d98f (0x47), 0xa1bf0b (4), 0xa1d07f (0x16).
 - Unknown: whether these paths run offline (the reader loops over session peers, so with no
   peers it reads nothing), and what the 0x158-byte records drive.
+- Per-frame driver: WorldChrMan update (function 0xa509f0) calls 0xa1d2d0([WorldChrMan + 0x630],
+  dt, [0x3d5c0a0]+0x28). 0xa1d2d0 ticks timers (+0x39c/+0x3a4/+0x3b8) and calls, in order:
+  0xa1dd00, 0xa1e140 (sends 0x29), 0xa1e9f0 (sends 0x37), 0xa1c100 (sends 4, on a timer),
+  0xa1bde0 (loop), 0xa1b320, 0xa1af40 (reads 0x46), then, if 0x1072f80(session manager), 0xa1cc70.
+  0xa1af40 returns at once unless 0x1072fe0([0x3d948e8]) (session "online") is true.
+- So a native enemy-sync manager exists and runs every frame, gated on the session state. Next:
+  what the 0x158-byte per-character records are and who consumes them; what the senders pack;
+  whether the gate can be opened for these functions only, or the records fed directly.
