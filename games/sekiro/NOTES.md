@@ -1293,3 +1293,12 @@ that hook (1119 frames in 20 s) and feeds them back every frame from a NetAI upd
   playback; 1233 small records consumed.
 - Next: a longer fight with movement, then compare attack animations one to one; then the same
   through the network (`ENEMY_SYNC`, now per frame from the hooks instead of the 4 Hz ticker).
+- Run 110 (`ENEMY_SYNC=loop` near the same enemies): two enemies (0x0820, 0x0821) were driven
+  by their own records sent through the simulator; the Hero died with PlayerNoDead set (0x9f2bf0
+  confirms debug_flags+0 = player no-dead, +16 all; 0x9f2c70 reads +1/+17, taken as no-damage
+  and set as well from run 111). The death reloaded the area; the client side noticed it ("lost
+  the enemy"), found the new characters and drove them again.
+- Run 111 (replay, no-damage on): the behaviour record changed 13 times while recording; in
+  playback the enemy moved 1 m and then **vanished** after 8 s (its ChrIns left the registry,
+  its record slot was cleared at 14 s). Unknown why (death, despawn, or an effect of a replayed
+  record). Next: log HP and the character's state flags during playback.
