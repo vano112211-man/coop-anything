@@ -1171,3 +1171,17 @@ allow, so no code was copied; only layout facts were used and checked at run tim
   the clone moving (the rebased copy in mode 1 did not). Visual change not yet seen: in the
   mirror test both sides wear the same gear; needs a two-player test, and items the receiver
   does not own stay as they were.
+
+## Enemy driven by a sync record (bot runs 84-85, 2026-10-31), observed
+
+- NetAIManipulator (alloc 0x19de730(0x450, 0x10, [0x3d9ce18]), ctor 0x7e9f10(this), +0x340 = net
+  id) on enemy 10120000 (id 0x083c). Run 84 put it only at chr+0x58: never called.
+- ChrCtrl update 0x7ded90 takes the manipulator from ctrl+0x358 (override) or else ctrl+0x120
+  (ctrl = chr+0x50); it calls vt+0x48 when ctrl+0x190 bit 0 / vt[0xf0] allow, else vt+0x50.
+- Run 85 (override at ctrl+0x358): NetAI consumed 1785 of 1786 records we wrote (flag bit 0 set
+  by us, cleared to 0x100 by the game's getter 0xa1bd10); **the enemy followed the Hero's path
+  from 1.5 s ago at 0.15-0.33 m from the target for the whole run**. So the game's own client-side
+  enemy code moves enemies from 0x1c records offline. Record layout used by NetAI (0x7ea5c0):
+  vec3 at +0 (position) and vec3 at +0xc (read with the same helper 0x7e4c40, probably rotation).
+- The enemy's animation id stayed 0 in the log: animation / actions probably come from the 0x158
+  record (flag bit 2) or another packet type. Next.
