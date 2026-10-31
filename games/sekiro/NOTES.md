@@ -1079,3 +1079,10 @@ clone stands 0.5-1 m off the packet height (its own collision), so |delta|/T > 2
 T = 1/30 s. Second: arrival-time interpolation turned network clumps into 12-27 m/s target
 steps. Both fixed; the remaining 20 jumps (run 75) start with the clone rising 0.3 m per frame,
 then being pulled down 1.75 m.
+| 76 | 4 s circle; game window hidden by the desktop tool for part of the run | 0 | 119 | 20.8 |
+| 77 | same build, game window visible the whole run | 0 | **1** | **11.5** (Hero 8.8) |
+
+Run 76 is not comparable: the window was minimized while the bot started, and the buffer was
+dry 1692 of 1835 times. Run 77 (window in front): one jump in 60 s; the buffer is still dry about
+600 times a minute because the newest sample often lands just before the render time (mapped
+offset 270 ms, buffer delay 120 ms); a longer delay (~180 ms) should fix that.
