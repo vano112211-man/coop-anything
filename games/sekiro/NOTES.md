@@ -1223,3 +1223,31 @@ Observed:
   enemy near this save's start fights.
 - Unknown: whether 10120000 is a hostile enemy at all here, and whether NetAI reproduces
   attacks from the 0x158 record. Needs an enemy that fights (owner: a save next to a patrol).
+
+## Clone smoothness against the frame rate (bot runs 90-102, 2026-10-31)
+
+Observed: clone jumps per minute varied from 1 to 94 between runs of the same build. Frames
+in the 60 s bot window: 1906-2951 (32-49 fps) in the bad runs, 3425-3551 (57-59 fps) in the good
+ones. Reproduced with a test knob (`SEKIRO_COOP_BOT_FRAME_SLEEP_MS=14`: ~38 fps).
+
+Derived: the receive hook runs twice a frame and the clone moves between only some of those
+calls, so a fixed 0.4 m per-sample "jump" is ordinary at low frame rates. New metric: clone
+displacement over 100 ms windows; a "lunge" is > 1.2 m per 100 ms (12 m/s, faster than the Hero
+runs).
+
+Changes, each checked with the bot (38 fps = sleep 14):
+| Run | Setting | fps | Per-sample jumps | Lunges (100 ms) | Clone / Hero speed p95 (m/s) |
+|---|---|---|---|---|---|
+| 96 | old: 33 ms wall-clock cadence | 38 | 24 | 6 | 7.04 / 6.06 |
+| 97 | T gate (manip+0x3cc > 0), one packet per update | 38 | 10 | 0 | 6.38 / 5.90 |
+| 99 | + render delay = jitter p90 + sample-gap p90 + 20 ms, slew 2 ms/packet | 60 | 0 | 0 | 6.23 / 6.60 |
+| 101 | same | 38 | 12 | 2 | 6.01 / 6.06 (delay hit 600 ms) |
+| 102 | + every waiting type-1 packet enters the buffer | 38 | **0** | **0** | 6.09 / 6.32 |
+| 103 | same | 60 | 3 | **0** | 5.88 / 5.76 |
+
+Derived causes: (1) the wall-clock cadence handed packets 1 or 2 frames apart and the
+NetworkManipulator sets its speed from the previous interval; (2) the render delay ignored the
+spacing of the sender's samples (17-270 ms), so the buffer ran dry (431 of 3459 in run 98, 10 after);
+(3) one type-1 packet taken from the inbox per frame let a 60 fps sender outrun a 38 fps receiver,
+so samples entered the buffer late and the delay climbed to its cap. Defaults now: T gate on,
+`DP_SMOOTH_MS=1`.
