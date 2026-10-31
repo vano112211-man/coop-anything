@@ -1272,3 +1272,24 @@ so samples entered the buffer late and the delay climbed to its cap. Defaults no
   writer of the real id is not found yet. Map-placed enemies get the same handles in every game
   of the same map, so the net ids are probably the same on both PCs; the client checks kind and
   place before taking an enemy over anyway.
+
+## A fighting enemy replayed from its own records (bot run 109, 2026-10-31), observed
+
+Setup: owner placed the test save next to enemies; registry now filled by a ComManipulator
+update hook (0x7e54f0); the replay test tapes the enemy's 0x1c / 0x158 records every frame from
+that hook (1119 frames in 20 s) and feeds them back every frame from a NetAI update hook
+(0x7ea5c0) right before NetAI reads them. PlayerNoDead (debug_flags + 0) kept the Hero alive.
+
+- Enemy 10100030 (id 0x0821) noticed the Hero at t = 4.6 s. Its 0x158 record changed 7 times
+  in 20 s: u32 list 0x0032004e -> 0x0032004f -> 0x00320000 (+ u64 list 0x82/2, 0x45/2, 0x1d, 0x1c)
+  -> 0x00320189 -> 0x003209ef -> 0x00320a02; while idle it never changed. So the record is
+  written offline whenever the enemy's behaviour state changes (low 16 bits look like state ids).
+- Animation candidate (module chr+0x1ff8 -> +0x10, word +0x34): recording 0x1b9, 0x1ba, 0x410,
+  0x2710, 0x38a4, 0x38a5, 0x2711; playback (enemy on NetAI, fed the tape) 0x2710, 0x1f4c,
+  0x2710, 0x9c40, 0x271a, **0x38a5 at 7.9 s (recorded at 7.9 s)**, 0x271a. All 7 behaviour records
+  were consumed. So the behaviour record drives the enemy's actions on the NetAI side; the
+  sequence matches only partly (the NetAI enemy also reacts to the Hero standing next to it).
+- Position: the enemy barely moved while recording (0.6 m) and stood at its last position in
+  playback; 1233 small records consumed.
+- Next: a longer fight with movement, then compare attack animations one to one; then the same
+  through the network (`ENEMY_SYNC`, now per frame from the hooks instead of the 4 Hz ticker).
