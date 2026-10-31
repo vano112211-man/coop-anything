@@ -6,7 +6,7 @@
 | Versions tested | Steam 1.06 (`sekiro.exe` ProductVersion 1.6.0.0, PE timestamp `0x5fa3e066`, SHA-256 `637aca527538c0ec6e1f136c8ed66046e95dfbdbb1f51926e134d9916398b856`) |
 | Projects | [Sekiro Online](https://www.nexusmods.com/sekiro/mods/577) (Souls-style summons, abandoned 2021); [sekiro-coop](https://github.com/mstampfli/sekiro-coop) (seamless 2-player prototype, Rust) |
 | QA level | none (one real game client plus the project's peer simulator; no two-client test yet) |
-| Last updated | 2026-10-28 |
+| Last updated | 2026-10-31 |
 
 ## Where things stand
 
@@ -16,7 +16,11 @@ it. sekiro-coop is the only seamless attempt. On a public branch ([vano112211-ma
 now shows up as a stand-in enemy (the Owl) that follows the remote player and plays matching
 attacks, blocks and dodges, tested on one PC against the peer simulator. On 2026-10-29 two players on
 two Steam accounts saw each other as Wolves moving with each other's animations, driven by the
-game's own remote-player code over Steam P2P, still with visible jerks.
+game's own remote-player code over Steam P2P, still with visible jerks. Since then, measured with
+an in-game bot on one PC (2026-10-31): the other player's Wolf follows without lunges at 38 and
+60 fps; enemy sync records travel host -> network -> client and drive the client's copy of an
+enemy through the game's own client-side AI; enemy health can be shared both ways. Whether a
+fighting enemy's attacks come across, and deaths, are untested (no enemy near the test save fights).
 
 ## Existing work
 
