@@ -1102,3 +1102,16 @@ indices into this game's item table. The other player's handles mean nothing in 
 is resolving handle -> param id on the sender and finding or creating the item on the receiver.
 (This run's save loaded next to a rock wall: Hero speed p50 1.7 m/s, clone 98 jumps; not a
 smoothness result.)
+
+## Bot runs 79-81 (2026-10-31), observed
+
+- The owner noticed the open-loop bot drifted (runs forward faster than it turns back) into walls.
+  The bot now steers toward a point moving on a 3 m circle around its start.
+- Run 79 (own PGD on): clone stood still between snaps (speed p50 0.05), buffer dry 82% of the time.
+  Adaptive render delay added (90th percentile of the packet lag + 40 ms, 120-600 ms).
+- Run 80 (own PGD on, adaptive delay hit 600 ms): clone speed p50 0.00, 52 jumps.
+- Run 81 (**own PGD off**, adaptive delay 323 ms): Hero speed p50 4.36 / p95 5.83, **clone p50 3.89 /
+  p95 7.89, 2 jumps in 60 s**, buffer dry 228 of 1771. Best run so far.
+- So the copied PlayerGameData breaks the clone's own movement (runs 78-80); `CLONE_OWN_PGD` stays
+  off. Equipment needs another route (a PGD made by the game's ctor like ReplayGhostIns, or
+  changing only the clone's ChrAsm model).
