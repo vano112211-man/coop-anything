@@ -1086,3 +1086,19 @@ Run 76 is not comparable: the window was minimized while the bot started, and th
 dry 1692 of 1835 times. Run 77 (window in front): one jump in 60 s; the buffer is still dry about
 600 times a minute because the newest sample often lands just before the render time (mapped
 offset 270 ms, buffer delay 120 ms); a longer delay (~180 ms) should fix that.
+
+## Clone appearance: own PlayerGameData (2026-10-31)
+
+Derived (offline): PlayerGameData vt 0x29cc9a0, 0xa10 bytes, ctor 0x7bfe80(pgd, flag, -1); allocated
+by 0x19de730(0xa10, 8, [0x3d9ce70]). +0x278 EquipGameData (ctor 0x799670), its +0x98 ChrAsm
+(vt 0x2a1edd0, ctor 0x9cafa0: +0x24 25 x u32, +0x88 -1, +0x90 12 bytes, +0x9c u32). +0x740 FaceData
+(vt 0x29c7440, +0x110 owner PGD). ReplayGhostIns (vt 0x2a2d190, ctor near 0xa392f5) gives each
+ghost its own PGD at +0x2290 and fills the face from replay data with 0x7c4250.
+
+Observed (bot run 78, `SEKIRO_COOP_CLONE_OWN_PGD=1`): the clone runs on a rebased copy of the Hero's
+PGD (7 self-pointers rebased) without a crash; Appearance packets apply. The ChrAsm words are
+not param ids but item handles: 0x8080002E.. (weapons/tools), 0x90800027.. (protectors), i.e.
+indices into this game's item table. The other player's handles mean nothing in our game: next
+is resolving handle -> param id on the sender and finding or creating the item on the receiver.
+(This run's save loaded next to a rock wall: Hero speed p50 1.7 m/s, clone 98 jumps; not a
+smoothness result.)
