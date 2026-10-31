@@ -1115,3 +1115,20 @@ smoothness result.)
 - So the copied PlayerGameData breaks the clone's own movement (runs 78-80); `CLONE_OWN_PGD` stays
   off. Equipment needs another route (a PGD made by the game's ctor like ReplayGhostIns, or
   changing only the clone's ChrAsm model).
+
+## Stage 2 (shared enemies): first scouting (2026-10-31), derived, not run
+
+- RTTI: EnemyIns (vt 0x2a27f28), EnemyCtrl (0x29d3910), NetAIManipulator (0x29d3eb8, ctor 0x7e9f10,
+  update 0x7ea5c0; reads per-slot data via WorldChrMan 0xa4b7b0/0xa4b710/0xa4b770 with index
+  +0x340; looks like the AI manipulator of a networked player slot, not enemies),
+  SprjChrBehaviorSyncModule, SprjEnemyDamageModule.
+- The packet storage ([0x3d67c90]; read 0x8e6b50(storage, peer, type, buf, cap), send 0x8e7210 /
+  0x8e6fa0 / 0x8e7310) still has senders/readers for about 60 packet types (0x4..0x4c).
+- Type 0x46 reader (function around 0xa1afa9..0xa1b276): for each peer in the session manager
+  ([0x3d948e8] +0x160..+0x168), read up to 0x5700 bytes: u32 count, then entries keyed by a u16
+  id = (chr-set index << 11) | slot, applied to per-character records of 0x158 bytes
+  ([set + 0x28] + slot*0x158, sets at [r15 + 0x10 + i*8], count at [r15 + 8]). This looks like the
+  DS3 host-to-client batched enemy state. Sender candidates: 0xa1b4ba (0x46), 0xa1dc74 (0x47),
+  0xa1c4f9 (4), 0xa1cc07 (5); readers 0xa1d98f (0x47), 0xa1bf0b (4), 0xa1d07f (0x16).
+- Unknown: whether these paths run offline (the reader loops over session peers, so with no
+  peers it reads nothing), and what the 0x158-byte records drive.
