@@ -1057,3 +1057,25 @@ up and something snaps it to the packet position (not found yet).
 Next run tools: `SEKIRO_COOP_DP_TRACE=1` (8 s of per-tick clone pos/target/velocity/stick/snap/T,
 15 s after the clone appears) and `SEKIRO_COOP_DP_LEAD=1.2` (target moved 1.2x ahead of the
 clone's position to cancel the damping); `run-wolf-dp.cmd lead` vs plain.
+
+## Automated bot runs (2026-10-31), observed
+
+Setup: `run-bot.cmd` (local, simulator mirror 250 ms) with `SEKIRO_COOP_BOT=1` (the Hero is driven
+for 60 s: a 6 s circle at run speed for 10 s, stand 2 s; move vector written to PadManipulator
++0x10/+0xc0 after its own update) and `SEKIRO_COOP_BOT_AUTOLOAD=1` (Enter/E from inside the game
+until the Hero exists). Started from File Explorer by computer use; the game closes itself on
+"bot: done". The mod logs per-frame speed stats for Hero and clone and the context of each
+clone jump (> 0.4 m in one frame).
+
+| Run | Change | Hero jumps | Clone jumps | Clone speed p95 (m/s) |
+|---|---|---|---|---|
+| 71 | jitter buffer by arrival time | 1 | 120 | 17.6 |
+| 72 | + type-24 delayed with it | 0 | 123 | 18.4 |
+| 74 | + clone keeps its own height | (open area) | many, all x/z snaps | - |
+| 75 | + samples timed by the sender's clock | 0 | 20 | 12.5 (Hero 7.6) |
+
+Findings from the jump log: every jump was a snap (+0x350) on packet arrival. First cause: the
+clone stands 0.5-1 m off the packet height (its own collision), so |delta|/T > 20 m/s at
+T = 1/30 s. Second: arrival-time interpolation turned network clumps into 12-27 m/s target
+steps. Both fixed; the remaining 20 jumps (run 75) start with the clone rising 0.3 m per frame,
+then being pulled down 1.75 m.
