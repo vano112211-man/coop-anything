@@ -1152,3 +1152,22 @@ enemies (10120000, 10130000, 72002080, ...) have ComManipulator with net ids 0x0
 0x0880.. (set 1 and set 1/... slots). Their 0x1c records are filled offline: f32 x, y, z, 0,
 yaw (e.g. 1.187), 0, then 0xffff. The 0x158 records are mostly zero offline. Records did not
 change over 3 s for idle enemies. Next: make one enemy a NetAI puppet driven by a record we write.
+
+## Equipment of the other player (bot run 83, 2026-10-31)
+
+Outside reference: the public `fromsoftware-rs` repository (vswarte; `sekiro` crate) describes
+PlayerGameData / EquipGameData / EquipInventoryData for Sekiro. Its licence is "MIT NON-AI" /
+"Apache NON-AI" (no use in AI training datasets), which adds restrictions the AGPL does not
+allow, so no code was copied; only layout facts were used and checked at run time.
+- EquipGameData+0x98 ChrAsm (as found here), +0x168 EquipInventoryData; PGD+0x3f0
+  InventoryItemsData: +0x8 normal head, +0x10 count, +0x18 key head, +0x20 count; entries 0x10
+  bytes { gaitem handle, item id, quantity, _ }.
+- Observed: the Hero's inventory had 39 entries; 10 ChrAsm slots resolved to item ids (0x11170,
+  0x1adb0 x5, 0x100186a0, 0x1001ffb8, 0x10018e70, 0x10019258). The Appearance packet now carries
+  item ids; the receiver maps them to its own handles (10 of 10 mapped in the mirror test).
+- `SEKIRO_COOP_CLONE_OWN_PGD=2`: a fresh PGD from the game's allocator 0x19de730(0xa10, 8,
+  [0x3d9ce70]) and ctor 0x7bfe80(pgd, 0, -1), with PlayerInfo, ChrAsm ids and face copied in.
+  Bot run 83: clone speed p50 3.78 (Hero 4.32), 4 jumps in 60 s, no crash. So the fresh PGD keeps
+  the clone moving (the rebased copy in mode 1 did not). Visual change not yet seen: in the
+  mirror test both sides wear the same gear; needs a two-player test, and items the receiver
+  does not own stay as they were.
