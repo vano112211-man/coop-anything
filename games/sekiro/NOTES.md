@@ -1251,3 +1251,18 @@ spacing of the sender's samples (17-270 ms), so the buffer ran dry (431 of 3459 
 (3) one type-1 packet taken from the inbox per frame let a 60 fps sender outrun a 38 fps receiver,
 so samples entered the buffer late and the delay climbed to its cap. Defaults now: T gate on,
 `DP_SMOOTH_MS=1`.
+
+## Enemy health in both games (bot runs 104-105, 2026-10-31)
+
+- The base mod already sends EnemyStates (handle, HP, ...) from the host at 5 Hz, and a client
+  with `SEKIRO_COOP_APPLY_REMOTE=1` writes lower HP values (decrement-only). New
+  `SEKIRO_COOP_ENEMY_HP_SYNC=1`: both games send and both apply decrement-only, so a hit in
+  either game lowers the enemy's HP in both. Characters with id 0 (players, the clone) are left
+  out in both directions (the Hero's handle can be the same in both games).
+- Observed (run 104, mirror simulator echoing HP-1): the host applied 5-6 enemies a second, HP
+  falling by 1 per echo (155 -> 87 over 70 s).
+- Observed (run 105, simulator `--kill-handle 268451969 --kill-after-secs 70`): the host wrote hp 0
+  to that enemy (72002081, 290 m away, animation -1) and it stayed at 0 for the 15 s watched; no
+  revive. Unknown: what an active enemy does at hp 0 written this way (death animation, drops,
+  the deathblow prompt). Needs an enemy near the save.
+- The Steam launchers turn on both enemy records and health sync with `SHARED_ENEMIES=1`.
