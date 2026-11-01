@@ -1302,3 +1302,24 @@ that hook (1119 frames in 20 s) and feeds them back every frame from a NetAI upd
   playback the enemy moved 1 m and then **vanished** after 8 s (its ChrIns left the registry,
   its record slot was cleared at 14 s). Unknown why (death, despawn, or an effect of a replayed
   record). Next: log HP and the character's state flags during playback.
+
+## Replay of a fighting enemy: path and animation match (bot run 113, 2026-11-01), observed
+
+- With `SEKIRO_COOP_ENEMY_REPLAY_WARP=1` the Hero was put 3 m from enemy 10100030 (it fought; the
+  record changed 17 times in 20 s; the enemy walked 164.66 -> 170.7 in x). Playback (same enemy on
+  NetAI, fed the tape per frame) started back at the first recorded position and then followed
+  the recorded path in time: x 166.669 at 11.06 s (recorded 166.668 at 11.17 s), 168.058 at
+  14.69 s (recorded 168.050 at 14.69 s). Animation candidate 0x18ab0 at 7.1 s (recorded 7.7 s).
+  So position and actions of a fighting enemy are reproduced from its two records.
+- The enemy "vanished" at 17 s in playback, like run 111 at 8 s: the Hero's HP was 0 already at
+  the end of recording (player state hp=0) even with debug_flags +0/+1 set; the Hero died and the
+  area reloaded (respawn at the Dilapidated Temple idol, Dragonrot notices in the test save). So the
+  vanishing is the reload, not the replay. The bot now refills the Hero's HP every frame from the
+  Hero's own manipulator update (not tested yet).
+- Derived (RE): 0xa4cd80(WorldChrMan, id) resolves a net id; 0xa4ce60 is the inverse. Map sets
+  come first ([[wcm+0x10]+0x18] of them, at wcm+0x30, stride 0x140), players after (list at
+  wcm+0x40, matched by 0xa2a110). NetAI's target (mode 1, u16 at record +0x14c) is such an id, so
+  player targets are now sent as roles (sender's Hero / receiver's Hero) and mapped back.
+- Test save side effects (test copy only): several Hero deaths, Dragonrot on the Sculptor, the
+  Hero now at the Dilapidated Temple idol, far from the enemies. A fighting test needs the owner
+  to move the Hero back (or a backup of the test save from before).
